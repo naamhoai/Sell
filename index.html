@@ -24,7 +24,6 @@
         </thead>
         <tbody id="productTable"></tbody>
     </table>
-    <button onclick="addRow()">Thêm Sản Phẩm</button>
     <button onclick="saveInvoice()">Lưu Hóa Đơn</button>
     <h3>Tổng Tiền: <span id="totalPrice">0</span> VND</h3>
     
@@ -32,22 +31,31 @@
     <ul id="invoiceList"></ul>
 
     <script>
-        function addRow() {
+        let productList = [
+            { name: "Sản phẩm A", price: 10000 },
+            { name: "Sản phẩm B", price: 20000 },
+            { name: "Sản phẩm C", price: 15000 }
+        ];
+
+        function loadProducts() {
             let table = document.getElementById("productTable");
-            let row = table.insertRow();
-            row.innerHTML = `
-                <td><input type="text" placeholder="Tên sản phẩm"></td>
-                <td><input type="number" placeholder="Giá" oninput="calculateTotal()"></td>
-                <td><input type="number" placeholder="Số lượng" oninput="calculateTotal()"></td>
-                <td class="rowTotal">0</td>
-            `;
+            table.innerHTML = "";
+            productList.forEach((product, index) => {
+                let row = table.insertRow();
+                row.innerHTML = `
+                    <td>${product.name}</td>
+                    <td>${product.price}</td>
+                    <td><input type="number" min="0" placeholder="Số lượng" oninput="calculateTotal()" data-index="${index}"></td>
+                    <td class="rowTotal">0</td>
+                `;
+            });
         }
         
         function calculateTotal() {
             let rows = document.querySelectorAll("#productTable tr");
             let total = 0;
-            rows.forEach(row => {
-                let price = row.cells[1].querySelector("input").value || 0;
+            rows.forEach((row, index) => {
+                let price = productList[index].price;
                 let quantity = row.cells[2].querySelector("input").value || 0;
                 let rowTotal = price * quantity;
                 row.cells[3].textContent = rowTotal;
@@ -59,12 +67,14 @@
         function saveInvoice() {
             let rows = document.querySelectorAll("#productTable tr");
             let invoice = [];
-            rows.forEach(row => {
-                let product = row.cells[0].querySelector("input").value;
-                let price = row.cells[1].querySelector("input").value;
+            rows.forEach((row, index) => {
+                let product = productList[index].name;
+                let price = productList[index].price;
                 let quantity = row.cells[2].querySelector("input").value;
                 let total = row.cells[3].textContent;
-                invoice.push({ product, price, quantity, total });
+                if (quantity > 0) {
+                    invoice.push({ product, price, quantity, total });
+                }
             });
             let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
             invoices.push({ date: new Date().toLocaleString(), invoice });
@@ -110,6 +120,7 @@
             loadInvoices();
         }
 
+        loadProducts();
         loadInvoices();
     </script>
 </body>
