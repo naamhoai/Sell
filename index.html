@@ -6,8 +6,9 @@
     <title>Hóa Đơn Sản Phẩm</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; }
-        table { width: 100%; max-width: 400px; margin: auto; border-collapse: collapse; }
+        table { width: 100%; max-width: 600px; margin: auto; border-collapse: collapse; }
         th, td { border: 1px solid black; padding: 8px; text-align: center; }
+        img { width: 50px; height: 50px; }
         button { margin: 10px; padding: 10px; font-size: 16px; }
     </style>
 </head>
@@ -16,8 +17,9 @@
     <table>
         <thead>
             <tr>
+                <th>Hình Ảnh</th>
                 <th>Sản Phẩm</th>
-                <th>Giá</th>
+                <th>Giá (VND)</th>
                 <th>Số Lượng</th>
                 <th>Tổng</th>
             </tr>
@@ -31,34 +33,46 @@
     <ul id="invoiceList"></ul>
 
     <script>
-        let productList = [
-            { name: "Sản phẩm A", price: 10000 },
-            { name: "Sản phẩm B", price: 20000 },
-            { name: "Sản phẩm C", price: 15000 }
+        const products = [
+            { name: "Bia", price: 20000, img: "https://biasaigontaydo.com.vn/wp-content/uploads/2023/03/bia-saigon-lager-1.png" },
+            { name: "Nước Ngọt", price: 15000, img: "https://via.placeholder.com/50?text=Nước+Ngọthttps://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSkjM1IG9WUdi4V3UPQqp2DY8R8e03Azr2WQA&s" },
+            // { name: "Cam", price: 30000, img: "https://via.placeholder.com/50?text=Cam" },
+            // { name: "Táo", price: 25000, img: "https://via.placeholder.com/50?text=Táo" },
+            // { name: "Gà Rán", price: 50000, img: "https://via.placeholder.com/50?text=Gà+Rán" },
+            // { name: "Bánh Mì", price: 10000, img: "https://via.placeholder.com/50?text=Bánh+Mì" },
+            // { name: "Sữa Tươi", price: 18000, img: "https://via.placeholder.com/50?text=Sữa+Tươi" },
+            // { name: "Coca Cola", price: 12000, img: "https://via.placeholder.com/50?text=Coca" },
+            // { name: "Trà Xanh", price: 13000, img: "https://via.placeholder.com/50?text=Trà+Xanh" },
+            // { name: "Bánh Quy", price: 22000, img: "https://via.placeholder.com/50?text=Bánh+Quy" },
+            // { name: "Khoai Tây Chiên", price: 35000, img: "https://via.placeholder.com/50?text=Khoai" },
+            // { name: "Pizza", price: 90000, img: "https://via.placeholder.com/50?text=Pizza" },
+            // { name: "Mì Tôm", price: 5000, img: "https://via.placeholder.com/50?text=Mì+Tôm" },
+            // { name: "Dưa Hấu", price: 18000, img: "https://via.placeholder.com/50?text=Dưa+Hấu" },
+            // { name: "Kem", price: 25000, img: "https://via.placeholder.com/50?text=Kem" }
         ];
 
         function loadProducts() {
             let table = document.getElementById("productTable");
             table.innerHTML = "";
-            productList.forEach((product, index) => {
+            products.forEach((product, index) => {
                 let row = table.insertRow();
                 row.innerHTML = `
+                    <td><img src="${product.img}" alt="${product.name}"></td>
                     <td>${product.name}</td>
                     <td>${product.price}</td>
-                    <td><input type="number" min="0" placeholder="Số lượng" oninput="calculateTotal()" data-index="${index}"></td>
+                    <td><input type="number" min="0" value="0" oninput="calculateTotal()"></td>
                     <td class="rowTotal">0</td>
                 `;
             });
         }
-        
+
         function calculateTotal() {
             let rows = document.querySelectorAll("#productTable tr");
             let total = 0;
             rows.forEach((row, index) => {
-                let price = productList[index].price;
-                let quantity = row.cells[2].querySelector("input").value || 0;
-                let rowTotal = price * quantity;
-                row.cells[3].textContent = rowTotal;
+                let quantity = row.cells[3].querySelector("input").value || 0;
+                let rowTotal = products[index].price * quantity;
+                row.cells[4].textContent = rowTotal;
                 total += rowTotal;
             });
             document.getElementById("totalPrice").textContent = total;
@@ -68,14 +82,20 @@
             let rows = document.querySelectorAll("#productTable tr");
             let invoice = [];
             rows.forEach((row, index) => {
-                let product = productList[index].name;
-                let price = productList[index].price;
-                let quantity = row.cells[2].querySelector("input").value;
-                let total = row.cells[3].textContent;
+                let quantity = row.cells[3].querySelector("input").value;
                 if (quantity > 0) {
-                    invoice.push({ product, price, quantity, total });
+                    invoice.push({
+                        product: products[index].name,
+                        price: products[index].price,
+                        quantity,
+                        total: row.cells[4].textContent
+                    });
                 }
             });
+            if (invoice.length === 0) {
+                alert("Chưa có sản phẩm nào được chọn!");
+                return;
+            }
             let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
             invoices.push({ date: new Date().toLocaleString(), invoice });
             localStorage.setItem("invoices", JSON.stringify(invoices));
@@ -99,18 +119,7 @@
         function viewInvoice(index) {
             let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
             let invoice = invoices[index].invoice;
-            let table = document.getElementById("productTable");
-            table.innerHTML = "";
-            invoice.forEach(item => {
-                let row = table.insertRow();
-                row.innerHTML = `
-                    <td>${item.product}</td>
-                    <td>${item.price}</td>
-                    <td>${item.quantity}</td>
-                    <td>${item.total}</td>
-                `;
-            });
-            document.getElementById("totalPrice").textContent = invoice.reduce((sum, item) => sum + Number(item.total), 0);
+            alert(JSON.stringify(invoice, null, 2));
         }
 
         function deleteInvoice(index) {
