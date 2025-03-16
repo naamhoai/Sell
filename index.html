@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hóa Đơn Sản Phẩm</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        table { width: 100%; max-width: 400px; margin: auto; border-collapse: collapse; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; }
+        button { margin: 10px; padding: 10px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h2>Hóa Đơn Sản Phẩm</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Sản Phẩm</th>
+                <th>Giá</th>
+                <th>Số Lượng</th>
+                <th>Tổng</th>
+            </tr>
+        </thead>
+        <tbody id="productTable"></tbody>
+    </table>
+    <button onclick="addRow()">Thêm Sản Phẩm</button>
+    <button onclick="saveInvoice()">Lưu Hóa Đơn</button>
+    <h3>Tổng Tiền: <span id="totalPrice">0</span> VND</h3>
+    
+    <h2>Hóa Đơn Đã Lưu</h2>
+    <ul id="invoiceList"></ul>
+
+    <script>
+        function addRow() {
+            let table = document.getElementById("productTable");
+            let row = table.insertRow();
+            row.innerHTML = `
+                <td><input type="text" placeholder="Tên sản phẩm"></td>
+                <td><input type="number" placeholder="Giá" oninput="calculateTotal()"></td>
+                <td><input type="number" placeholder="Số lượng" oninput="calculateTotal()"></td>
+                <td class="rowTotal">0</td>
+            `;
+        }
+        
+        function calculateTotal() {
+            let rows = document.querySelectorAll("#productTable tr");
+            let total = 0;
+            rows.forEach(row => {
+                let price = row.cells[1].querySelector("input").value || 0;
+                let quantity = row.cells[2].querySelector("input").value || 0;
+                let rowTotal = price * quantity;
+                row.cells[3].textContent = rowTotal;
+                total += rowTotal;
+            });
+            document.getElementById("totalPrice").textContent = total;
+        }
+
+        function saveInvoice() {
+            let rows = document.querySelectorAll("#productTable tr");
+            let invoice = [];
+            rows.forEach(row => {
+                let product = row.cells[0].querySelector("input").value;
+                let price = row.cells[1].querySelector("input").value;
+                let quantity = row.cells[2].querySelector("input").value;
+                let total = row.cells[3].textContent;
+                invoice.push({ product, price, quantity, total });
+            });
+            let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
+            invoices.push({ date: new Date().toLocaleString(), invoice });
+            localStorage.setItem("invoices", JSON.stringify(invoices));
+            alert("Hóa đơn đã được lưu!");
+            loadInvoices();
+        }
+
+        function loadInvoices() {
+            let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
+            let invoiceList = document.getElementById("invoiceList");
+            invoiceList.innerHTML = "";
+            invoices.forEach((inv, index) => {
+                let li = document.createElement("li");
+                li.innerHTML = `<strong>Hóa đơn ${index + 1} (${inv.date})</strong>
+                                <button onclick="viewInvoice(${index})">Xem</button>
+                                <button onclick="deleteInvoice(${index})">Xóa</button>`;
+                invoiceList.appendChild(li);
+            });
+        }
+
+        function viewInvoice(index) {
+            let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
+            let invoice = invoices[index].invoice;
+            let table = document.getElementById("productTable");
+            table.innerHTML = "";
+            invoice.forEach(item => {
+                let row = table.insertRow();
+                row.innerHTML = `
+                    <td>${item.product}</td>
+                    <td>${item.price}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.total}</td>
+                `;
+            });
+            document.getElementById("totalPrice").textContent = invoice.reduce((sum, item) => sum + Number(item.total), 0);
+        }
+
+        function deleteInvoice(index) {
+            let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
+            invoices.splice(index, 1);
+            localStorage.setItem("invoices", JSON.stringify(invoices));
+            loadInvoices();
+        }
+
+        loadInvoices();
+    </script>
+</body>
+</html>
